@@ -2763,10 +2763,28 @@ lazy_sbrk(char *s)
   exit(0);
 }
 
+void
+read_num(char* s)
+{
+  uint x1 = readnum();
+  //int x2 = readnum();
+  char buf[100];
+  (void) read(4, buf, 1);
+  //int x3 = readnum();
+  int i;
+  for (i = 0; i < 1000; i++) {
+    (void) read(4, buf, 1);
+  }
+  int x4 = readnum();
+  printf("READNUM_TEST_OUTPUT %u %u\n", x1, x4);
+  exit(0); 
+}
+
 struct test {
   void (*f)(char *);
   char *s;
 } quicktests[] = {
+  {read_num, "read_num"},
   {copyin, "copyin"},
   {copyout, "copyout"},
   {copyinstr1, "copyinstr1"},

@@ -107,3 +107,17 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+// return how many times reads have called
+// since start
+uint64
+sys_readnum(void)
+{
+  uint xreadnum;
+
+  acquire(&rn_lock);
+  xreadnum = readnum;
+  release(&rn_lock);
+  return xreadnum;
+}

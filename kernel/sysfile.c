@@ -76,6 +76,10 @@ sys_read(void)
   argint(2, &n);
   if (argfd(0, 0, &f) < 0)
     return -1;
+
+  /* Increment readnum (global var) */
+  increadnum();
+
   return fileread(f, p, n);
 }
 

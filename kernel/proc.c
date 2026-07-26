@@ -15,6 +15,9 @@ struct proc *initproc;
 int nextpid = 1;
 struct spinlock pid_lock;
 
+uint readnum = 0;
+struct spinlock rn_lock;
+
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
@@ -101,6 +104,18 @@ allocpid()
 
   return pid;
 }
+
+
+void
+increadnum(void)
+{
+  acquire(&rn_lock);
+  readnum = readnum + 1;
+  release(&rn_lock);
+
+  return;
+}
+
 
 // Look in the process table for an UNUSED proc.
 // If found, initialize state required to run in the kernel,
