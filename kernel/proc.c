@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "pstat.h"
 
 struct cpu cpus[NCPU];
 
@@ -54,6 +55,7 @@ procinit(void)
 
   initlock(&pid_lock, "nextpid");
   initlock(&wait_lock, "wait_lock");
+  initlock(&rn_lock, "readnum");
   for (p = proc; p < &proc[NPROC]; p++) {
     initlock(&p->lock, "proc");
     p->state = UNUSED;
@@ -243,6 +245,8 @@ userinit(void)
 
   p->state = RUNNABLE;
 
+  pstatnewproc(p, NEWPROC_USERINIT);
+
   release(&p->lock);
 }
 
@@ -315,6 +319,9 @@ kfork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
+
+  pstatnewproc(np, NEWPROC_KFORK);
+
   release(&np->lock);
 
   return pid;
