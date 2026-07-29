@@ -74,3 +74,26 @@ raiseticket(struct proc *p, int tickets)
     release(&pstat_lock);
 }
 
+
+void
+pstatkillproc(struct proc *p)
+{
+    acquire(&pstat_lock);
+    int proc_idx = p - proc;
+    pstat->inuse[proc_idx] = 0;
+    pstat->pid[proc_idx] = -1;
+    pstat->tickets[proc_idx] = 0;
+    pstat->ticks[proc_idx] = 0;
+    release(&pstat_lock);
+}
+
+// Increment the tick count for the given process
+// Called when the timer expired
+void
+pstattick(struct proc *p)
+{
+    acquire(&pstat_lock);
+    int proc_idx = p - proc;
+    pstat->ticks[proc_idx]++;
+    release(&pstat_lock);
+}
