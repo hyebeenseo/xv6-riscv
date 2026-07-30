@@ -169,6 +169,11 @@ clockintr()
   if (cpuid() == 0) {
     acquire(&tickslock);
     ticks++;
+
+    struct proc* p;
+    p = myproc();
+    pstattick(p);
+
     wakeup(&ticks);
     release(&tickslock);
   }

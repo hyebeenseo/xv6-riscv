@@ -9,6 +9,7 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
+struct pstat;
 
 // bio.c
 void            binit(void);
@@ -184,8 +185,11 @@ void            virtio_disk_intr(void);
 
 // pstat.c
 void            pstatinit(void);
-void            pstatnewproc(struct proc *p, int mode);
-int             raisetichet(struct proc *p, int tickets);
+void            pstatnewproc(struct proc *, int);
+int             raiseticket(struct proc *, int);
+void            pstatfreeproc(struct proc *);
+void            pstattick(struct proc*);
+int             pstatgetinfo(uint64);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

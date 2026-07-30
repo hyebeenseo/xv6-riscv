@@ -1,6 +1,13 @@
-#include "pstat.h"
+#include "types.h"
+#include "param.h"
+#include "memlayout.h"
+#include "riscv.h"
 #include "spinlock.h"
-#include "proc.c"
+#include "proc.h"
+#include "defs.h"
+#include "pstat.h"
+
+extern struct proc proc[NPROC];
 
 /*
 struct pstat {
@@ -20,7 +27,7 @@ pstatinit(void)
 {
     struct proc *p;
     initlock(&pstat_lock, "pstat");
-    aquire(&pstat_lock);
+    acquire(&pstat_lock);
 
     for (p = proc; p < &proc[NPROC]; p++) {
         int idx = p - proc;
@@ -72,11 +79,12 @@ raiseticket(struct proc *p, int tickets)
     pstat->tickets[p - proc] = tickets;
 
     release(&pstat_lock);
+    return 0;
 }
 
 
 void
-pstatkillproc(struct proc *p)
+pstatfreeproc(struct proc *p)
 {
     acquire(&pstat_lock);
     int proc_idx = p - proc;
@@ -96,4 +104,17 @@ pstattick(struct proc *p)
     int proc_idx = p - proc;
     pstat->ticks[proc_idx]++;
     release(&pstat_lock);
+}
+
+
+int
+pstatgetinfo(uint64 buf)
+{
+    acquire(&pstat_lock);
+    if (copyout(myproc()->pagetable, buf, (char*)pstat, sizeof(pstat)) < 0) {
+        release(&pstat_lock);
+        return -1;
+    }
+    release(&pstat_lock);
+    return 0;
 }

@@ -6,6 +6,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "vm.h"
+#include "pstat.h"
 
 uint64
 sys_exit(void)
@@ -121,3 +122,30 @@ sys_readnum(void)
   release(&rn_lock);
   return xreadnum;
 }
+
+// Sets the number of tichets of the calling process
+// 
+uint64
+sys_setticket(void)
+{
+  int n;
+  argint(0, &n);
+
+  struct proc* p;
+  p = myproc();
+
+  return raiseticket(p, n);
+}
+
+uint64
+sys_pgetinfo(void)
+{
+  uint64 ups;
+  argaddr(0, &ups);
+
+  if (pstatgetinfo(ups) < 0) {
+    return -1;
+  }
+  return 0;
+}
+
