@@ -531,11 +531,12 @@ lottery_scheduler(void)
       //printk("ticket sum: %d\n", ticket_sum);
       int rand = xorshift32() % ticket_sum;
       //printk("rand: %d\n", rand);
+      //printk("ticket num: %d %d %d\n", ticket_idx[0], ticket_idx[1], ticket_idx[2]);
+      //printk("pid       : %d %d %d\n", pid_idx[0], pid_idx[1], pid_idx[2]);
       int rand_idx = 0;
-      while (rand <= ticket_idx[rand_idx]) {
+      while (rand >= ticket_idx[rand_idx]) {
         rand_idx++;
       }
-      rand_idx--;
       int selected_pid = pid_idx[rand_idx];
       //printk("selected pid: %d\n", selected_pid);
 
