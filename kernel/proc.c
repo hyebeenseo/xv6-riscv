@@ -486,6 +486,76 @@ scheduler(void)
   }
 }
 
+void
+lottery_scheduler(void)
+{
+  struct proc *p;
+  struct cpu *c = mycpu();
+
+  c-> proc = 0;
+  for (;;) {
+    intr_on();
+    intr_off();
+
+    int ticket_sum = 0;
+    
+    int ticket_idx[NPROC];
+    int pid_idx[NPROC];
+    for (int i = 0; i < NPROC; i++) {
+      ticket_idx[i] = -1;
+      pid_idx[i] = -1;
+    }
+
+    int idx = 0;
+    for (p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if (p->state == RUNNABLE) {
+        ticket_sum += pstat.tickets[proc - p];
+        pid_idx[idx] = p->pid;
+        ticket_idx[idx] = ticket_sum;
+        idx++;
+      }
+      release(&p->lock);
+    }
+
+    if (ticket_sum <= 0) {
+      // nothing to run; stop running on this core until an interrupt.
+      asm volatile("wfi");
+    }
+    else {
+      int rand = xorshift32() % ticket_sum;
+      int rand_idx = 0;
+      while (rand <= ticket_idx[rand_idx]) {
+        rand_idx++;
+      }
+      rand_idx--;
+      int selected_pid = pid_idx[rand_idx];
+
+      for (p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->pid == selected_pid && p->state == RUNNABLE) {
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        p->state = RUNNING;
+        c->proc = p;
+        swtch(&c->context, &p->context);
+
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        c->proc = 0;
+        release(&p->lock);
+        }
+        else {
+          panic("lottery scheduler");
+        }
+      }
+    }
+  }
+}
+
+
+
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
 // intena because intena is a property of this

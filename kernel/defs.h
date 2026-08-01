@@ -94,6 +94,7 @@ struct cpu*     mycpu(void);
 struct proc*    myproc();
 void            procinit(void);
 void            scheduler(void) __attribute__((noreturn));
+void            lottery_scheduler(void) __attribute__((noreturn));
 void            sched(void);
 void            sleep(void*, struct spinlock*);
 void            userinit(void);
@@ -190,6 +191,9 @@ int             raiseticket(struct proc *, int);
 void            pstatfreeproc(struct proc *);
 void            pstattick(struct proc*);
 int             pstatgetinfo(uint64);
+
+// prng.c
+uint32          xorshift32(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))

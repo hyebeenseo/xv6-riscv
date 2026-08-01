@@ -7,7 +7,7 @@
 #define NEWPROC_KFORK 1
 
 extern struct spinlock pstat_lock;
-extern struct pstat* pstat;
+extern struct pstat pstat;
 
 struct pstat {
   int inuse[NPROC];   // whether this slot of the process table is in use (1 or 0)

@@ -20,23 +20,22 @@ struct pstat {
 
 
 struct spinlock pstat_lock;
-struct pstat* pstat;
+struct pstat pstat;
 
 void
 pstatinit(void)
 {
-    struct proc *p;
     initlock(&pstat_lock, "pstat");
     acquire(&pstat_lock);
 
-    for (p = proc; p < &proc[NPROC]; p++) {
-        int idx = p - proc;
-        pstat->inuse[idx] = 0;
-        pstat->tickets[idx] = 0;
-        pstat->pid[idx] = -1;
-        pstat->ticks[idx] = 0;
+    printk("pstat lock acquired\n");
+    for (int i = 0; i < NPROC; i++) {
+        pstat.inuse[i] = 0;
+        pstat.tickets[i] = 0;
+        pstat.pid[i] = -1;
+        pstat.ticks[i] = 0;
     }
-    
+    printk("for termintated\n");
     release(&pstat_lock);
 }
 
@@ -48,20 +47,20 @@ pstatnewproc(struct proc *p, int mode)
     switch (mode)
     {
     case NEWPROC_USERINIT:
-        pstat->inuse[proc_idx] = 1;
-        pstat->pid[proc_idx] = p->pid;
-        pstat->tickets[proc_idx] = 1;
-        pstat->ticks[proc_idx] = 0;
+        pstat.inuse[proc_idx] = 1;
+        pstat.pid[proc_idx] = p->pid;
+        pstat.tickets[proc_idx] = 1;
+        pstat.ticks[proc_idx] = 0;
         break;
     
     case NEWPROC_KFORK:
         int parent_idx = (p->parent) - proc;
-        int parent_tickets = pstat->tickets[parent_idx];
+        int parent_tickets = pstat.tickets[parent_idx];
 
-        pstat->inuse[proc_idx] = 1;
-        pstat->pid[proc_idx] = p->pid;
-        pstat->tickets[proc_idx] = parent_tickets; // Inherit parent's tickets
-        pstat->ticks[proc_idx] = 0;
+        pstat.inuse[proc_idx] = 1;
+        pstat.pid[proc_idx] = p->pid;
+        pstat.tickets[proc_idx] = parent_tickets; // Inherit parent's tickets
+        pstat.ticks[proc_idx] = 0;
         break;
 
     default:
@@ -76,7 +75,7 @@ raiseticket(struct proc *p, int tickets)
     acquire(&pstat_lock);
 
     if (tickets <= 0) return -1;
-    pstat->tickets[p - proc] = tickets;
+    pstat.tickets[p - proc] = tickets;
 
     release(&pstat_lock);
     return 0;
@@ -88,10 +87,10 @@ pstatfreeproc(struct proc *p)
 {
     acquire(&pstat_lock);
     int proc_idx = p - proc;
-    pstat->inuse[proc_idx] = 0;
-    pstat->pid[proc_idx] = -1;
-    pstat->tickets[proc_idx] = 0;
-    pstat->ticks[proc_idx] = 0;
+    pstat.inuse[proc_idx] = 0;
+    pstat.pid[proc_idx] = -1;
+    pstat.tickets[proc_idx] = 0;
+    pstat.ticks[proc_idx] = 0;
     release(&pstat_lock);
 }
 
@@ -102,7 +101,7 @@ pstattick(struct proc *p)
 {
     acquire(&pstat_lock);
     int proc_idx = p - proc;
-    pstat->ticks[proc_idx]++;
+    pstat.ticks[proc_idx]++;
     release(&pstat_lock);
 }
 
@@ -111,7 +110,7 @@ int
 pstatgetinfo(uint64 buf)
 {
     acquire(&pstat_lock);
-    if (copyout(myproc()->pagetable, buf, (char*)pstat, sizeof(pstat)) < 0) {
+    if (copyout(myproc()->pagetable, buf, (char*)&pstat, sizeof(pstat)) < 0) {
         release(&pstat_lock);
         return -1;
     }
