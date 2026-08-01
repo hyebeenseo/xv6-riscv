@@ -172,7 +172,7 @@ clockintr()
 
     struct proc* p;
     p = myproc();
-    pstattick(p);
+    if (p != 0) pstattick(p);
 
     wakeup(&ticks);
     release(&tickslock);

@@ -28,15 +28,23 @@ main()
     pstatinit();        // pstat for lottery scheduler
     printk("5. pstatinit run\n");
     trapinit();         // trap vectors
+    printk("6. trapinit run\n");
     trapinithart();     // install kernel trap vector
+    printk("7. trapinithart run\n");
     plicinit();         // set up interrupt controller
+    printk("8. plincinit run\n");
     plicinithart();     // ask PLIC for device interrupts
+    printk("9. plicinithart run\n");
     binit();            // buffer cache
+    printk("10. binit run\n");
     iinit();            // inode table
+    printk("11. iinit run\n");
     fileinit();         // file table
+    printk("12. fileinit run\n");
     virtio_disk_init(); // emulated hard disk
+    printk("13. virito_disk_init run\n");
     userinit();         // first user process
-    printk("userinit run");
+    printk("14. userinit run\n");
     __atomic_thread_fence(__ATOMIC_SEQ_CST);
     started = 1;
   } else {
@@ -49,5 +57,6 @@ main()
     plicinithart(); // ask PLIC for device interrupts
   }
   //scheduler();
+  //printk("lets call lottery scheduler!\n");
   lottery_scheduler();
 }

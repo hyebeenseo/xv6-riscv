@@ -489,6 +489,7 @@ scheduler(void)
 void
 lottery_scheduler(void)
 {
+  //printk("lottery scheduler started\n");
   struct proc *p;
   struct cpu *c = mycpu();
 
@@ -510,45 +511,57 @@ lottery_scheduler(void)
     for (p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if (p->state == RUNNABLE) {
-        ticket_sum += pstat.tickets[proc - p];
+        acquire(&pstat_lock);
+        //printk("runnable process pid: %d\n", p->pid);
+        ticket_sum += pstat.tickets[p - proc];
         pid_idx[idx] = p->pid;
         ticket_idx[idx] = ticket_sum;
         idx++;
+        release(&pstat_lock);
       }
       release(&p->lock);
     }
 
     if (ticket_sum <= 0) {
+      //printk("ticket sum: %d\n", ticket_sum);
       // nothing to run; stop running on this core until an interrupt.
       asm volatile("wfi");
     }
     else {
+      //printk("ticket sum: %d\n", ticket_sum);
       int rand = xorshift32() % ticket_sum;
+      //printk("rand: %d\n", rand);
       int rand_idx = 0;
       while (rand <= ticket_idx[rand_idx]) {
         rand_idx++;
       }
       rand_idx--;
       int selected_pid = pid_idx[rand_idx];
+      //printk("selected pid: %d\n", selected_pid);
 
       for (p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
-        if (p->pid == selected_pid && p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
+        if (p->pid == selected_pid) {
+          if (p->state == RUNNABLE) {
+            //printk("process %d running\n", p->pid);
+        
+            // Switch to chosen process.  It is the process's job
+            // to release its lock and then reacquire it
+            // before jumping back to us.
+            p->state = RUNNING;
+            c->proc = p;
+            swtch(&c->context, &p->context);
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+            // Process is done running for now.
+            // It should have changed its p->state before coming back.
+            c->proc = 0;
+          }
+          else {
+            printk("process id: %d, process state: %d\n",p->pid, p->state);
+            panic("lottery scheduler");
+          }
+        }
         release(&p->lock);
-        }
-        else {
-          panic("lottery scheduler");
-        }
       }
     }
   }

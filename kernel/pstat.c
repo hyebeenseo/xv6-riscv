@@ -28,14 +28,14 @@ pstatinit(void)
     initlock(&pstat_lock, "pstat");
     acquire(&pstat_lock);
 
-    printk("pstat lock acquired\n");
+    //printk("pstat lock acquired\n");
     for (int i = 0; i < NPROC; i++) {
         pstat.inuse[i] = 0;
         pstat.tickets[i] = 0;
         pstat.pid[i] = -1;
         pstat.ticks[i] = 0;
     }
-    printk("for termintated\n");
+    //printk("for termintated\n");
     release(&pstat_lock);
 }
 
@@ -61,6 +61,11 @@ pstatnewproc(struct proc *p, int mode)
         pstat.pid[proc_idx] = p->pid;
         pstat.tickets[proc_idx] = parent_tickets; // Inherit parent's tickets
         pstat.ticks[proc_idx] = 0;
+
+        //printk("**fork pstat initializing check**\n");
+        //printk("parend pid: %d, process pid: %d\n", p->parent->pid, p->pid);
+        //printk("parent tickets: %d, process tickets: %d\n", parent_tickets, pstat.tickets[proc_idx]);
+
         break;
 
     default:
@@ -100,7 +105,9 @@ void
 pstattick(struct proc *p)
 {
     acquire(&pstat_lock);
+    //printk("proc=%p p=%p\n", proc, p);
     int proc_idx = p - proc;
+    //printk("tick updated idx: %d\n", proc_idx);
     pstat.ticks[proc_idx]++;
     release(&pstat_lock);
 }
