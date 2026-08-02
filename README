@@ -1,3 +1,21 @@
+# xv6 Study
+
+This repository is based on MIT xv6-riscv and contains my implementations of several operating system features.
+
+## Completed
+
+- ✅ System Calls
+- ✅ Lottery Scheduler
+- ⬜ Copy-on-Write
+- ⬜ MLFQ
+
+Detailed documentation:
+
+- docs/system-call.md
+- docs/lottery-scheduler.md
+
+---
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern RISC-V multiprocessor using ANSI C.
