@@ -7,6 +7,7 @@
 #include "kernel/syscall.h"
 #include "kernel/memlayout.h"
 #include "kernel/riscv.h"
+#include "pstat.h"
 
 //
 // Tests xv6 system calls.  usertests without arguments runs them all
@@ -2780,11 +2781,172 @@ read_num(char* s)
   exit(0); 
 }
 
+
+// a test for system call setticket
+void
+sched_test1(char *s)
+{
+  int pid;
+
+  for (int i = 0; i < 5; i++) {
+      pid = fork();
+
+      if (pid == 0) {
+          // child
+          switch (i) {
+          case 0: setticket(3); break;
+          case 1: setticket(5); break;
+          case 2: setticket(7); break;
+          case 3: setticket(9); break;
+          case 4: setticket(11); break;
+          }
+
+          int tick = 0;
+          while (tick < 1000000)
+              tick++;
+
+          exit(0);
+      }
+  }
+
+  // parent
+  for (int i = 0; i < 5; i++)
+      wait(0);
+
+  printf("sched_test1 completed\n");
+}
+
+// a test for system call setticket and getpinfo
+/*
+void
+sched_test2(char *s)
+{
+  int pid;
+
+  for (int i = 0; i < 5; i++) {
+      pid = fork();
+
+      if (pid == 0) {
+          // child
+          switch (i) {
+          case 0: setticket(3); break;
+          case 1: setticket(5); break;
+          case 2: setticket(7); break;
+          case 3: setticket(9); break;
+          case 4: setticket(11); break;
+          }
+
+          int tick = 0;
+          while (tick < 1000000000) {
+            tick++;
+              
+            if (tick % 100000000 == 0) {
+              printf("\n%d\n", tick / 100000000);
+              struct pstat* ps = malloc(sizeof(pstat));
+              pgetinfo(ps);
+              for (int i = 0; i < NPROC; i++) {
+                if (ps->pid[i] > 0)
+                  printf("pid: %d | ticks: %d | tickets: %d\n", ps->pid[i], ps->ticks[i], ps->tickets[i]);
+              }
+              free(ps);
+            }
+          }
+          exit(0);
+      }
+  }
+
+  // parent
+  for (int i = 0; i < 5; i++)
+      wait(0);
+
+  printf("sched_test2 completed\n");
+}
+*/
+
+void
+worker(int ticket)
+{
+  setticket(ticket);
+
+  volatile int x = 0;
+  while (1) {
+    x++;
+  }
+}
+
+void
+sched_test2(char *s)
+{
+  int tickets[5] = {1, 2, 4, 8, 16};
+  int pids[5];
+  struct pstat ps;
+  int status;
+
+  for (int i = 0; i < 5; i++) {
+    pids[i] = fork();
+
+    if (pids[i] < 0) {
+      printf("%s: fork failed\n", s);
+
+      for (int j = 0; j < i; j++)
+        kill(pids[j]);
+      while (wait(0) > 0);
+
+      exit(1);
+    }
+
+    if (pids[i] == 0)
+      worker(tickets[i]);
+  }
+
+  for (int sample = 1; sample <= 10; sample++) {
+
+    pause(100);   // 100 timer ticks마다 측정
+
+    if (pgetinfo(&ps) < 0) {
+      printf("pgetinfo failed\n");
+      break;
+    }
+
+    printf("\n===== sample %d =====\n", sample);
+
+    for (int i = 0; i < NPROC; i++) {
+      if (!ps.inuse[i])
+        continue;
+      int sum = 0;
+      for (int j = 0; j < 5; j++) {
+        sum += ps.ticks[j];
+      }
+      for (int j = 0; j < 5; j++) {
+        if (ps.pid[i] == pids[j]) {
+          printf("pid=%d  ticket=%d  ticks=%d \n",
+                 ps.pid[i],
+                 ps.tickets[i],
+                 ps.ticks[i]
+                 );
+          break;
+        }
+      }
+    }
+  }
+
+  for (int i = 0; i < 5; i++)
+    kill(pids[i]);
+
+  for (int i = 0; i < 5; i++)
+    wait(&status);
+
+  printf("sched_test2 completed\n");
+}
+
+
 struct test {
   void (*f)(char *);
   char *s;
 } quicktests[] = {
   {read_num, "read_num"},
+  {sched_test1, "sched_test1"},
+  {sched_test2, "sched_test2"},
   {copyin, "copyin"},
   {copyout, "copyout"},
   {copyinstr1, "copyinstr1"},

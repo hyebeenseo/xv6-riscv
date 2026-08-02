@@ -65,7 +65,7 @@ pstatnewproc(struct proc *p, int mode)
         //printk("**fork pstat initializing check**\n");
         //printk("parend pid: %d, process pid: %d\n", p->parent->pid, p->pid);
         //printk("parent tickets: %d, process tickets: %d\n", parent_tickets, pstat.tickets[proc_idx]);
-        //printk("\n");
+        // printk("\n");
 
         break;
 
@@ -80,7 +80,7 @@ raiseticket(struct proc *p, int tickets)
 {
     acquire(&pstat_lock);
 
-    if (tickets <= 0) return -1;
+    if (tickets <= 0 || tickets > 100) return -1;
     pstat.tickets[p - proc] = tickets;
 
     release(&pstat_lock);

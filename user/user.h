@@ -27,8 +27,8 @@ int pause(int);
 int uptime(void);
 int sync(void);
 uint readnum(void);
-int settickets(int);
-int getpinfo(struct pstat *);
+int setticket(int);
+int pgetinfo(struct pstat *);
 
 // ulib.c
 int stat(const char *, struct stat *);
